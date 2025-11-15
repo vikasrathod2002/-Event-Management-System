@@ -1,54 +1,54 @@
 import React from 'react';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw, WifiOff, Server } from 'lucide-react';
 
 const ErrorBoundary = ({ error, onRetry }) => {
   if (!error) return null;
 
+  const getErrorDetails = () => {
+    if (error.includes('ECONNREFUSED') || error.includes('Network Error')) {
+      return {
+        icon: <WifiOff size={20} />,
+        title: 'Connection Error',
+        message: 'Unable to connect to the server.',
+        instructions: 'Please check your internet connection and ensure the backend server is running.'
+      };
+    } else if (error.includes('5')) {
+      return {
+        icon: <Server size={20} />,
+        title: 'Server Error',
+        message: 'The server encountered an error.',
+        instructions: 'Please try again later or contact support if the problem persists.'
+      };
+    } else {
+      return {
+        icon: <AlertCircle size={20} />,
+        title: 'Error',
+        message: error,
+        instructions: 'Please try again or refresh the page.'
+      };
+    }
+  };
+
+  const { icon, title, message, instructions } = getErrorDetails();
+
   return (
-    <div style={{
-      background: '#fef2f2',
-      border: '1px solid #fecaca',
-      color: '#dc2626',
-      padding: '16px',
-      borderRadius: '8px',
-      marginBottom: '20px',
-      display: 'flex',
-      alignItems: 'flex-start',
-      gap: '12px'
-    }}>
-      <AlertCircle size={20} />
-      <div style={{ flex: 1 }}>
-        <strong>Connection Error</strong>
-        <p style={{ margin: '8px 0', fontSize: '14px' }}>{error}</p>
-        <div style={{ fontSize: '12px', marginBottom: '8px' }}>
-          <strong>To fix this:</strong>
-          <ol style={{ marginLeft: '20px', marginTop: '4px' }}>
-            <li>Open terminal in the <code>backend</code> folder</li>
-            <li>Run <code>npm run dev</code></li>
-            <li>Wait for "Server running on port 5000" message</li>
-            <li>Refresh this page</li>
-          </ol>
+    <div className="error-boundary">
+      <div className="error-content">
+        {icon}
+        <div className="error-details">
+          <h3>{title}</h3>
+          <p className="error-message">{message}</p>
+          <p className="error-instructions">{instructions}</p>
+          {onRetry && (
+            <button 
+              onClick={onRetry}
+              className="btn btn-error"
+            >
+              <RefreshCw size={14} />
+              Try Again
+            </button>
+          )}
         </div>
-        {onRetry && (
-          <button 
-            onClick={onRetry}
-            style={{
-              background: '#dc2626',
-              color: 'white',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <RefreshCw size={14} />
-            Retry Connection
-          </button>
-        )}
       </div>
     </div>
   );
