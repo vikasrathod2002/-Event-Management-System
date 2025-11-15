@@ -8,6 +8,7 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
+        target: 'https://event-management-system-backend-dpmx.onrender.com',
         changeOrigin: true
       }
     }
