@@ -7,7 +7,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'https://event-management-system-backend-dpmx.onrender.com/',
+        target: 'https://event-management-system-backend-dpmx.onrender.com',
         changeOrigin: true
       }
     }
