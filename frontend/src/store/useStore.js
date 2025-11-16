@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import axios from 'axios';
 
 // Get API URL from environment
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://event-management-system-backend-dpmx.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://event-management-system16.onrender.com';
 
 console.log('🔧 Store API URL:', `${API_BASE_URL}/api`);
 
