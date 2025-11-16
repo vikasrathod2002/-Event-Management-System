@@ -2,20 +2,25 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import axios from 'axios';
 
-// Create axios instance with production configuration
+// Get API URL from environment
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://event-management-system-backend-dpmx.onrender.com';
+
+console.log('🔧 Store API URL:', `${API_BASE_URL}/api`);
+
+// Create axios instance
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
-  timeout: 15000,
+  baseURL: `${API_BASE_URL}/api`,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor for logging and error handling
+// Request interceptor
 api.interceptors.request.use(
   (config) => {
     if (import.meta.env.DEV) {
-      console.log(`🚀 ${config.method?.toUpperCase()} ${config.url}`);
+      console.log(`🚀 ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
     }
     return config;
   },
@@ -25,24 +30,29 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor for error handling
+// Response interceptor
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const errorMessage = error.response?.data?.message || error.message;
-    
-    if (error.code === 'ECONNREFUSED') {
-      error.message = 'Unable to connect to server. Please check your connection.';
-    } else if (error.response?.status >= 500) {
-      error.message = 'Server error. Please try again later.';
-    }
-    
     console.error('❌ API Error:', {
       url: error.config?.url,
       status: error.response?.status,
-      message: errorMessage
+      message: error.message
     });
     
+    let userMessage = 'An unexpected error occurred';
+    
+    if (error.code === 'ECONNREFUSED' || error.code === 'NETWORK_ERROR') {
+      userMessage = 'Unable to connect to server. Please check your connection.';
+    } else if (error.response?.status >= 500) {
+      userMessage = 'Server error. Please try again later.';
+    } else if (error.response?.status === 404) {
+      userMessage = 'Requested resource not found.';
+    } else if (error.response?.data?.message) {
+      userMessage = error.response.data.message;
+    }
+    
+    error.userMessage = userMessage;
     return Promise.reject(error);
   }
 );
@@ -55,24 +65,23 @@ const useStore = create(
       selectedProfile: null,
       loading: false,
       error: null,
-      lastFetch: null,
 
       // Profile actions
       fetchProfiles: async () => {
         set({ loading: true, error: null });
         try {
+          console.log('📞 Fetching profiles from:', '/profiles');
           const response = await api.get('/profiles');
           set({ 
             profiles: response.data, 
-            loading: false, 
-            lastFetch: Date.now(),
+            loading: false,
             error: null 
           });
         } catch (error) {
-          console.error('Error fetching profiles:', error);
+          console.error('❌ Error fetching profiles:', error);
           set({ 
             loading: false, 
-            error: error.message || 'Failed to load profiles'
+            error: error.userMessage || error.message || 'Failed to load profiles'
           });
         }
       },
@@ -87,7 +96,7 @@ const useStore = create(
           return response.data;
         } catch (error) {
           console.error('Error creating profile:', error);
-          const errorMsg = error.response?.data?.message || error.message || 'Failed to create profile';
+          const errorMsg = error.userMessage || error.response?.data?.message || error.message || 'Failed to create profile';
           set({ error: errorMsg });
           throw new Error(errorMsg);
         }
@@ -105,7 +114,7 @@ const useStore = create(
           }));
         } catch (error) {
           console.error('Error updating timezone:', error);
-          const errorMsg = error.response?.data?.message || error.message || 'Failed to update timezone';
+          const errorMsg = error.userMessage || error.response?.data?.message || error.message || 'Failed to update timezone';
           set({ error: errorMsg });
           throw new Error(errorMsg);
         }
@@ -124,14 +133,13 @@ const useStore = create(
           set({ 
             events: response.data, 
             loading: false,
-            lastFetch: Date.now(),
             error: null 
           });
         } catch (error) {
           console.error('Error fetching events:', error);
           set({ 
             loading: false, 
-            error: error.message || 'Failed to load events'
+            error: error.userMessage || error.message || 'Failed to load events'
           });
         }
       },
@@ -146,48 +154,13 @@ const useStore = create(
           return response.data;
         } catch (error) {
           console.error('Error creating event:', error);
-          const errorMsg = error.response?.data?.message || error.message || 'Failed to create event';
+          const errorMsg = error.userMessage || error.response?.data?.message || error.message || 'Failed to create event';
           set({ error: errorMsg });
           throw new Error(errorMsg);
         }
       },
       
-      updateEvent: async (eventId, eventData) => {
-        try {
-          const response = await api.put(`/events/${eventId}`, eventData);
-          set(state => ({
-            events: state.events.map(e => 
-              e._id === eventId ? response.data : e
-            ),
-            error: null
-          }));
-          return response.data;
-        } catch (error) {
-          console.error('Error updating event:', error);
-          const errorMsg = error.response?.data?.message || error.message || 'Failed to update event';
-          set({ error: errorMsg });
-          throw new Error(errorMsg);
-        }
-      },
-      
-      getEventLogs: async (eventId) => {
-        try {
-          const response = await api.get(`/events/${eventId}/logs`);
-          return response.data;
-        } catch (error) {
-          console.error('Error fetching event logs:', error);
-          const errorMsg = error.response?.data?.message || error.message || 'Failed to load event logs';
-          throw new Error(errorMsg);
-        }
-      },
-
-      // Utility actions
-      clearError: () => set({ error: null }),
-      refetchAll: () => {
-        const { fetchProfiles, fetchEvents } = get();
-        fetchProfiles();
-        fetchEvents();
-      }
+      clearError: () => set({ error: null })
     }),
     {
       name: 'event-management-storage',
