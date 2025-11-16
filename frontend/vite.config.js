@@ -5,7 +5,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   
   const isProduction = mode === 'production'
-  const apiUrl = env.VITE_API_URL || 'https://event-management-system-backend-dpmx.onrender.com'
+  const apiUrl = env.VITE_API_URL || 'https://event-management-system16.onrender.com'
   
   console.log(`🔧 Environment: ${mode}`)
   console.log(`🔧 API URL: ${apiUrl}`)
