@@ -12,7 +12,7 @@ const app = express();
 // Enhanced CORS for production
 app.use(cors({
   origin: [
-    'https://your-frontend-app.vercel.app', // Your frontend URL
+    'https://event-management-system27.onrender.com', 
     'http://localhost:3000',
     'http://localhost:5173'
   ],
